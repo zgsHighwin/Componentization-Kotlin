@@ -1,0 +1,72 @@
+if (isRelease) { // 如果是发布版本时，各个模块都不能独立运行
+    apply plugin: 'com.android.library'
+} else {
+    apply plugin: 'com.android.application'
+}
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+def androidId = rootProject.ext.androidId
+def appId = rootProject.ext.appId
+def dependenciesLib = rootProject.ext.dependenciesLib
+def testDependenciesLib = rootProject.ext.testDependenciesLib
+def androidDependenciesLib = rootProject.ext.androidDependenciesLib
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "29.0.3"
+    // 配置资源路径，方便测试环境，打包不集成到正式环境
+    sourceSets {
+        main {
+            if (!isRelease) {
+                // 如果是组件化模式，需要单独运行时
+                manifest.srcFile 'src/main/debug/AndroidManifest.xml'
+            } else {
+                // 集成化模式，整个项目打包apk
+                manifest.srcFile 'src/main/AndroidManifest.xml'
+//                kotlin {//kotlin上暂时无法实现
+//                    // release 时 debug 目录下文件不需要合并到主工程
+//                    exclude '**/debug/**'
+//                }
+
+            }
+        }
+    }
+    defaultConfig {
+        if (!isRelease) { // 如果是集成化模式，不能有applicationId
+            applicationId appId.order // 组件化模式能独立运行才能有applicationId
+        }
+        minSdkVersion androidId.minSdkVersion
+        targetSdkVersion androidId.targetSdkVersion
+        versionCode androidId.versionCode
+        versionName androidId.versionName
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // 这个方法接收三个非空的参数，第一个：确定值的类型，第二个：指定key的名字，第三个：传值（必须是String）
+        // 为什么需要定义这个？因为src代码中有可能需要用到跨模块交互，如果是组件化模块显然不行
+        // 切记：不能在android根节点，只能在defaultConfig或buildTypes节点下
+        buildConfigField("boolean", "isRelease", String.valueOf(isRelease))
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation project(':Common')
+
+    dependenciesLib.each { k, v ->
+        implementation v
+    }
+
+    testDependenciesLib.each { k, v ->
+        testImplementation v
+    }
+    androidDependenciesLib.each { k, v ->
+        androidTestImplementation v
+    }
+}

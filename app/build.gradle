@@ -2,18 +2,25 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
+def androidId = rootProject.ext.androidId
+def appId = rootProject.ext.appId
+def dependenciesLib = rootProject.ext.dependenciesLib
+def testDependenciesLib = rootProject.ext.testDependenciesLib
+def androidDependenciesLib = rootProject.ext.androidDependenciesLib
+
 android {
-    compileSdkVersion 30
-    buildToolsVersion "29.0.3"
+    compileSdkVersion androidId.compileSdkVersion
+    buildToolsVersion androidId.buildToolsVersion
 
     defaultConfig {
-        applicationId "com.savannah.componentizationproject"
-        minSdkVersion 16
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        applicationId appId.app
+        minSdkVersion androidId.minSdkVersion
+        targetSdkVersion androidId.targetSdkVersion
+        versionCode androidId.versionCode
+        versionName androidId.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "isRelease", String.valueOf(isRelease))
     }
 
     buildTypes {
@@ -26,12 +33,21 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.3.2'
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.2'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    implementation project(':Common')
 
+    dependenciesLib.each { k, v ->
+        implementation v
+    }
+
+    testDependenciesLib.each { k, v ->
+        testImplementation v
+    }
+    androidDependenciesLib.each { k, v ->
+        androidTestImplementation v
+    }
+
+    if (isRelease) {
+        implementation project(':order')
+//        implementation project(':personal')
+    }
 }

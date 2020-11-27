@@ -1,2 +1,5 @@
+include ':Common'
+include ':order'
+include ':personal'
 include ':app'
 rootProject.name = "ComponentizationProject"
